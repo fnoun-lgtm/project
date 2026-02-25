@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, ArrowLeft } from "lucide-react";
+import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, Presentation, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
@@ -14,7 +14,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6" dir="rtl">
       <div className="max-w-xl w-full text-center space-y-8 animate-fade-in">
-        {/* Logo / Badge */}
+        {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mx-auto">
           <Sparkles className="w-4 h-4" />
           مدعوم بالذكاء الاصطناعي
@@ -45,12 +45,18 @@ const Index = () => {
           ))}
         </div>
 
-        {/* CTA */}
-        <Button size="lg" className="gap-2 text-lg px-10 h-14 w-full sm:w-auto" onClick={() => navigate("/chat")}>
-          <MessageCircle className="w-5 h-5" />
-          جرّب الآن
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button size="lg" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/chat")}>
+            <MessageCircle className="w-5 h-5" />
+            جرّب الآن
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <Button size="lg" variant="outline" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/presentation")}>
+            <Presentation className="w-5 h-5" />
+            شاهد العرض
+          </Button>
+        </div>
       </div>
     </div>
   );
