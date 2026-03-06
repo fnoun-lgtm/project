@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, Presentation, ArrowLeft } from "lucide-react";
+import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, Presentation, ArrowLeft, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
@@ -55,6 +55,10 @@ const Index = () => {
           <Button size="lg" variant="outline" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/presentation")}>
             <Presentation className="w-5 h-5" />
             شاهد العرض
+          </Button>
+          <Button size="lg" variant="outline" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/poster")}>
+            <Image className="w-5 h-5" />
+            البوستر
           </Button>
         </div>
       </div>
