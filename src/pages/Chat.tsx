@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, ArrowRight, Lightbulb } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import ReactMarkdown from "react-markdown";
+import { ArrowRight, FileText } from "lucide-react";
+import { motion } from "framer-motion";
+import ChatBackground from "@/components/chat/ChatBackground";
+import ChatBubble from "@/components/chat/ChatBubble";
+import ChatEmptyState from "@/components/chat/ChatEmptyState";
+import ChatInput from "@/components/chat/ChatInput";
+import TypingIndicator from "@/components/chat/TypingIndicator";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -28,18 +32,9 @@ async function streamChat({
     body: JSON.stringify({ messages }),
   });
 
-  if (resp.status === 429) {
-    onError("عدد الطلبات كثير، حاول مرة ثانية بعد شوي ⏳");
-    return;
-  }
-  if (resp.status === 402) {
-    onError("الرصيد خلص، تحتاج تشحن رصيدك 💳");
-    return;
-  }
-  if (!resp.ok || !resp.body) {
-    onError("حصل خطأ، حاول مرة ثانية 🔄");
-    return;
-  }
+  if (resp.status === 429) { onError("عدد الطلبات كثير، حاول مرة ثانية بعد شوي ⏳"); return; }
+  if (resp.status === 402) { onError("الرصيد خلص، تحتاج تشحن رصيدك 💳"); return; }
+  if (!resp.ok || !resp.body) { onError("حصل خطأ، حاول مرة ثانية 🔄"); return; }
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
@@ -71,7 +66,6 @@ async function streamChat({
     }
   }
 
-  // flush
   if (buffer.trim()) {
     for (let raw of buffer.split("\n")) {
       if (!raw) continue;
@@ -93,12 +87,17 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Detect when report is ready (assistant messages > 4 and last message is long)
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const canShowReport = lastAssistant && lastAssistant.content.length > 500 && !isLoading;
 
   const send = async () => {
     const text = input.trim();
@@ -137,106 +136,86 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative overflow-hidden" dir="rtl">
+      <ChatBackground />
+
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="relative z-10 flex items-center justify-between px-5 py-3 glass-card mx-4 mt-4 rounded-2xl"
+      >
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowRight className="w-5 h-5" />
-          </Button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
           <div>
-            <h1 className="text-lg font-bold text-primary">نرتّب فكرتك</h1>
-            <p className="text-xs text-muted-foreground">حوّل فكرتك إلى مشروع منظّم</p>
+            <h1 className="text-base font-bold text-primary">نرتّب فكرتك</h1>
+            <p className="text-[11px] text-muted-foreground">حوّل فكرتك إلى مشروع منظّم</p>
           </div>
         </div>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-fade-in">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lightbulb className="w-10 h-10 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold mb-2">أهلاً! وش فكرتك؟ 💡</h2>
-              <p className="text-muted-foreground max-w-md">
-                اكتب فكرتك بأي طريقة تبغى — بالعربي أو الإنجليزي — وأنا بساعدك أرتّبها خطوة بخطوة
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-              {[
-                "تطبيق توصيل أكل صحي للموظفين",
-                "منصة تعليمية للأطفال",
-                "An app for freelancer invoicing",
-              ].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setInput(s)}
-                  className="px-4 py-2 rounded-full border border-border bg-card text-sm hover:border-primary transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"} animate-fade-in`}
+        {canShowReport && (
+          <motion.button
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowReport(!showReport)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-medium"
           >
-            <div
-              className={`max-w-[85%] md:max-w-[70%] px-5 py-3 ${
-                msg.role === "user" ? "chat-bubble-user" : "chat-bubble-ai"
-              }`}
-            >
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none text-inherit">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-              ) : (
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="flex justify-end animate-fade-in">
-            <div className="chat-bubble-ai px-5 py-3 flex gap-1">
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot" />
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot [animation-delay:0.2s]" />
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot [animation-delay:0.4s]" />
-            </div>
-          </div>
+            <FileText className="w-3.5 h-3.5" />
+            {showReport ? "المحادثة" : "عرض التقرير"}
+          </motion.button>
         )}
-      </div>
+      </motion.div>
+
+      {/* Messages or Report */}
+      {showReport && lastAssistant ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex-1 overflow-y-auto p-6 relative z-10"
+        >
+          <div className="max-w-3xl mx-auto glass-card rounded-3xl p-8 space-y-4">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/30">
+              <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">تقرير الفكرة</h2>
+                <p className="text-xs text-muted-foreground">تم إنشاؤه بالذكاء الاصطناعي</p>
+              </div>
+            </div>
+            <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground">
+              <ReactMarkdownWrapper content={lastAssistant.content} />
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-5 relative z-10">
+          {messages.length === 0 && <ChatEmptyState onSuggestionClick={setInput} />}
+
+          {messages.map((msg, i) => (
+            <ChatBubble key={i} message={msg} index={i} />
+          ))}
+
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
+        </div>
+      )}
 
       {/* Input */}
-      <div className="border-t border-border bg-card p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send();
-          }}
-          className="flex gap-3 max-w-3xl mx-auto"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="اكتب فكرتك هنا..."
-            className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-            disabled={isLoading}
-          />
-          <Button type="submit" size="icon" className="h-12 w-12 rounded-xl shrink-0" disabled={isLoading || !input.trim()}>
-            <Send className="w-5 h-5" />
-          </Button>
-        </form>
-      </div>
+      <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSend={send} />
     </div>
   );
 };
+
+// Small wrapper to avoid importing ReactMarkdown in the main file twice
+import ReactMarkdown from "react-markdown";
+const ReactMarkdownWrapper = ({ content }: { content: string }) => (
+  <ReactMarkdown>{content}</ReactMarkdown>
+);
 
 export default Chat;
