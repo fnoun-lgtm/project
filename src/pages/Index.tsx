@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, Presentation, ArrowLeft, Image } from "lucide-react";
+import { MessageCircle, Sparkles, Target, BarChart3, Lightbulb, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
