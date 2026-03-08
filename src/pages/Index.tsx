@@ -45,20 +45,12 @@ const Index = () => {
           ))}
         </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        {/* CTA */}
+        <div className="flex justify-center">
           <Button size="lg" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/chat")}>
             <MessageCircle className="w-5 h-5" />
             جرّب الآن
             <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <Button size="lg" variant="outline" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/presentation")}>
-            <Presentation className="w-5 h-5" />
-            شاهد العرض
-          </Button>
-          <Button size="lg" variant="outline" className="gap-2 text-lg px-10 h-14" onClick={() => navigate("/poster")}>
-            <Image className="w-5 h-5" />
-            البوستر
           </Button>
         </div>
       </div>
